@@ -76,7 +76,7 @@ GIT/
 5) Exit: non-zero exit code when `--strict` or errors exist.
 
 ## Community token
-The project references a community utility token `$HELIX` for gating premium rule packs and community-driven validation rulesets. Token logic is mocked; no blockchain calls are executed in this demo.
+`$HELIX` — концептуальный community utility token, ассоциированный с экосистемой валидатора: как маркер участия/доступа к продвинутым rule packs и общим пресетам. В этом мок-проекте он упомянут только как контекст, без какой-либо блокчейн- или ончейн-логики.
 
 ## Roadmap (mock)
 - Add streaming diagnostics.
