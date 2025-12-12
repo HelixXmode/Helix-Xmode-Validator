@@ -1,13 +1,13 @@
 # Helix X Validator
 
-Helix X Validator is a lightweight CLI/library for parsing Helix configs, validating rule sets and schemas, and producing clear error reports before deployments. It is built to be embeddable in CI pipelines and developer tooling while staying easy to extend.
+Helix X Validator is a lightweight CLI/library for parsing Helix configs, validating rule sets and schemas, and producing clear error reports before deployments. It is designed for CI friendliness, fast feedback, and extensibility via custom rule packs.
 
 ## Why it matters
-- Fast config parsing with pluggable loaders.
-- Rule- and schema-level validation with granular reports.
+- Fast parsing with pluggable loaders.
+- Schema + semantic validation with granular reports.
 - Consistent JSON/text output for CI or dashboards.
 - Extensible hooks for custom rule packs.
-- Ships with an example `$HELIX` community token mention for ecosystem integrations.
+- `$HELIX` token context for future ecosystem integrations.
 
 ## Quick start
 ```bash
@@ -45,6 +45,27 @@ async function main() {
 }
 
 main();
+```
+
+## At a glance (mental map)
+```
+Helix X Validator
+├─ Interfaces
+│  ├─ CLI (yargs)
+│  └─ Programmatic API (createValidator)
+├─ Core
+│  ├─ Parser/Loader (JSON)
+│  ├─ Schema checks (schema.ts)
+│  └─ Rule engine (ruleset.ts)
+├─ Reporting
+│  ├─ Text summary
+│  └─ JSON output
+├─ Tooling
+│  ├─ Scripts (validate-config.ts)
+│  ├─ Examples (basic-validation.ts)
+│  └─ Roadmap: GH Action, VS Code extension, WASM
+└─ Ecosystem
+   └─ `$HELIX` token (concept) for gated rule packs
 ```
 
 ## Project structure
