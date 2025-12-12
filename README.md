@@ -1,6 +1,6 @@
 # Helix X Validator
 
-Helix X Validator is a lightweight CLI and library for parsing Helix configuration files, validating rule sets and schemas, and producing clear error reports before deployments. It is built to be embeddable in CI pipelines and developer tooling while staying easy to extend.
+Helix X Validator is a lightweight CLI/library for parsing Helix configs, validating rule sets and schemas, and producing clear error reports before deployments. It is built to be embeddable in CI pipelines and developer tooling while staying easy to extend.
 
 ## Why it matters
 - Fast config parsing with pluggable loaders.
@@ -85,4 +85,3 @@ The project references a community utility token `$HELIX` for gating premium rul
 
 ## License
 Placeholder license. Replace with your actual licensing terms.
-
