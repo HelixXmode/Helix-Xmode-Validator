@@ -78,10 +78,17 @@ GIT/
 ## Community token
 `$HELIX` is a conceptual community utility token associated with the validator ecosystem.
 
-## Roadmap (mock)
-- Add streaming diagnostics.
-- Add Wasm build for browser-based validation.
-- Add signed rule packs gated by `$HELIX`.
+## Roadmap (draft)
+- Rulepack SDK: plugin loader for custom validations with isolation and versioning.
+- Stronger schema validation: JSON Schema + custom semantic validators.
+- Deterministic rule signatures and optional `$HELIX`-gated premium rulepacks.
+- Incremental/hashed validation for large configs and cached CI runs.
+- GitHub Action template with status checks and PR annotations.
+- VS Code extension: inline diagnostics and quick-fix hints.
+- WASM build for browser/edge usage (no Node APIs).
+- Performance budget with benchmarks and flamegraphs on CI.
+- Opt-in telemetry with PII redaction and local-only mode by default.
+- Signed release artifacts and SBOM generation for supply-chain hygiene.
 
 ## License
 Placeholder license. Replace with your actual licensing terms.
