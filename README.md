@@ -20,7 +20,7 @@ pnpm helix-validate ./examples/config/sample-config.json --format json
 
 ## CLI usage
 ```bash
-pnpm helix-validate <path> [--format text|json] [--ruleset <name>]
+pnpm helix-validate <path> [--format text|json|xml] [--ruleset <name>]
 ```
 Flags:
 - `--format` selects output format (default `text`).
