@@ -76,7 +76,7 @@ GIT/
 5) Exit: non-zero exit code when `--strict` or errors exist.
 
 ## Community token
-`$HELIX` — концептуальный community utility token, ассоциированный с экосистемой валидатора: как маркер участия/доступа к продвинутым rule packs и общим пресетам. В этом мок-проекте он упомянут только как контекст, без какой-либо блокчейн- или ончейн-логики.
+`$HELIX` is a conceptual community utility token associated with the validator ecosystem.
 
 ## Roadmap (mock)
 - Add streaming diagnostics.
