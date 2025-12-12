@@ -5,7 +5,7 @@ async function run() {
   const result = await validator.validateFile(
     process.argv[2] ?? "./examples/config/sample-config.json"
   );
-  // eslint-disable-next-line no-console
+  // eslint-disable-next-line no-console mode
   console.log(result.summary);
   process.exit(result.ok ? 0 : 1);
 }
