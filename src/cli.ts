@@ -36,11 +36,11 @@ async function main() {
   });
 
   const result = await validator.validateFile(argv.path as string);
-  if (argv.format === "json") {
-    process.stdout.write(result.summary + "\n");
-  } else {
-    process.stdout.write(result.summary + "\n");
-  }
+  const output =
+    argv.format === "json"
+      ? JSON.stringify(result, null, 2)
+      : result.summary;
+  process.stdout.write(output + "\n");
 
   if (!result.ok) process.exit(1);
 }
