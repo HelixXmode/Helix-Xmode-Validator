@@ -1,0 +1,27 @@
+{
+  "name": "helix-x-validator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Concept mock: CLI and library for validating Helix configs.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "helix-validate": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node src/cli.ts",
+    "lint": "echo \"lint placeholder\"",
+    "test": "echo \"tests are mocked\""
+  },
+  "dependencies": {
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/yargs": "^17.0.32",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}
+
