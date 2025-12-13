@@ -13,6 +13,7 @@ import path from "node:path";
 function lintAll() {
   const fix = process.argv.includes("--fix");
   const fixFlag = fix ? " --fix" : "";
+  const startTime = Date.now();
 
   // eslint-disable-next-line no-console
   console.log("🔍 Running lint checks...\n");
@@ -21,6 +22,7 @@ function lintAll() {
   const extensions = [".ts", ".tsx"];
   let totalFiles = 0;
   let totalIssues = 0;
+  let totalSize = 0;
 
   try {
     directories.forEach(dir => {
@@ -43,9 +45,18 @@ function lintAll() {
           
           // Check file size (very large files might indicate issues)
           const stats = statSync(file);
+          totalSize += stats.size;
+          
           if (stats.size > 1000000) {
             // eslint-disable-next-line no-console
             console.warn(`⚠️  Large file detected: ${relativePath} (${(stats.size / 1024).toFixed(2)} KB)`);
+            totalIssues++;
+          }
+
+          // Check for empty files
+          if (stats.size === 0) {
+            // eslint-disable-next-line no-console
+            console.warn(`⚠️  Empty file detected: ${relativePath}`);
             totalIssues++;
           }
 
@@ -60,12 +71,19 @@ function lintAll() {
       });
     });
 
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+
     // eslint-disable-next-line no-console
     console.log(`\n📊 Lint Summary:`);
     // eslint-disable-next-line no-console
     console.log(`   Files checked: ${totalFiles}`);
     // eslint-disable-next-line no-console
+    console.log(`   Total code size: ${totalSizeMB} MB`);
+    // eslint-disable-next-line no-console
     console.log(`   Issues found: ${totalIssues}`);
+    // eslint-disable-next-line no-console
+    console.log(`   Time elapsed: ${duration}s`);
 
     if (totalIssues === 0) {
       // eslint-disable-next-line no-console

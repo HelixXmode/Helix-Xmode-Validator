@@ -18,6 +18,9 @@ async function preCommit() {
   // eslint-disable-next-line no-console
   console.log("🔍 Running pre-commit checks...\n");
 
+  const overallStartTime = Date.now();
+  const CHECK_TIMEOUT = 120000; // 2 minutes per check
+
   const checks: Array<{ name: string; fn: () => Promise<boolean> }> = [
     {
       name: "TypeScript compilation",
@@ -87,29 +90,57 @@ async function preCommit() {
   const results: boolean[] = [];
   
   for (const check of checks) {
+    const checkStartTime = Date.now();
     // eslint-disable-next-line no-console
     console.log(`Running: ${check.name}...`);
-    const result = await check.fn();
-    results.push(result);
     
-    if (result) {
-      // eslint-disable-next-line no-console
-      console.log(`✅ ${check.name} passed\n`);
-    } else {
-      // eslint-disable-next-line no-console
-      console.log(`❌ ${check.name} failed\n`);
+    try {
+      const result = await Promise.race([
+        check.fn(),
+        new Promise<boolean>((_, reject) => 
+          setTimeout(() => reject(new Error("Check timeout")), CHECK_TIMEOUT)
+        )
+      ]);
+      
+      const checkDuration = ((Date.now() - checkStartTime) / 1000).toFixed(2);
+      results.push(result);
+      
+      if (result) {
+        // eslint-disable-next-line no-console
+        console.log(`✅ ${check.name} passed (${checkDuration}s)\n`);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log(`❌ ${check.name} failed (${checkDuration}s)\n`);
+      }
+    } catch (error) {
+      const checkDuration = ((Date.now() - checkStartTime) / 1000).toFixed(2);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes("timeout")) {
+        // eslint-disable-next-line no-console
+        console.error(`⏱️  ${check.name} timed out after ${CHECK_TIMEOUT / 1000}s\n`);
+      } else {
+        // eslint-disable-next-line no-console
+        console.error(`❌ ${check.name} error: ${errorMessage} (${checkDuration}s)\n`);
+      }
+      results.push(false);
     }
   }
 
   const allPassed = results.every(r => r);
+  const totalDuration = ((Date.now() - overallStartTime) / 1000).toFixed(2);
   
   if (allPassed) {
     // eslint-disable-next-line no-console
-    console.log("✅ All pre-commit checks passed!");
+    console.log(`✅ All pre-commit checks passed! (Total time: ${totalDuration}s)`);
     process.exit(0);
   } else {
+    const passedCount = results.filter(r => r).length;
+    const failedCount = results.length - passedCount;
     // eslint-disable-next-line no-console
-    console.error("❌ Pre-commit checks failed. Please fix the issues above before committing.");
+    console.error(`❌ Pre-commit checks failed (${passedCount}/${results.length} passed, ${totalDuration}s)`);
+    // eslint-disable-next-line no-console
+    console.error("   Please fix the issues above before committing.");
     process.exit(1);
   }
 }
