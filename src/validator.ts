@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { evaluateRules } from "./rules/ruleset";
 import { validateSchema } from "./rules/schema";
@@ -13,10 +13,13 @@ import {
 export class HelixValidator {
   private logger: Logger;
   private options: ValidatorOptions;
+  private cache: Map<string, { config: HelixConfig; timestamp: number }>;
+  private readonly cacheTtl: number = 5000; // 5 seconds
 
   constructor(options: ValidatorOptions = {}) {
     this.options = options;
-    this.logger = new Logger({ level: "info" });
+    this.logger = new Logger({ level: options.strict ? "warn" : "info" });
+    this.cache = new Map();
   }
 
   async validateFile(filePath: string): Promise<ValidationResult> {
@@ -24,6 +27,12 @@ export class HelixValidator {
     const config = await this.loadConfig(filePath);
     const result = this.validateConfig(config);
     const elapsedMs = Date.now() - started;
+    
+    this.logger.debug(`Validation completed in ${elapsedMs}ms`);
+    if (!result.ok) {
+      this.logger.warn(`Validation failed: ${result.issues.filter(i => i.severity === "error").length} errors`);
+    }
+    
     return { ...result, elapsedMs };
   }
 
@@ -42,9 +51,28 @@ export class HelixValidator {
   private async loadConfig(filePath: string): Promise<HelixConfig> {
     const resolved = path.resolve(filePath);
     this.logger.info(`Loading config from ${resolved}`);
+    
+    // Check cache first
+    const cached = this.cache.get(resolved);
+    if (cached && Date.now() - cached.timestamp < this.cacheTtl) {
+      this.logger.debug(`Using cached config for ${resolved}`);
+      return cached.config;
+    }
+
     try {
+      // Verify file exists and is readable
+      const stats = await stat(resolved);
+      if (!stats.isFile()) {
+        throw new Error(`Path is not a file: ${resolved}`);
+      }
+
       const file = await readFile(resolved, "utf8");
-      return JSON.parse(file) as HelixConfig;
+      const config = JSON.parse(file) as HelixConfig;
+      
+      // Cache the parsed config
+      this.cache.set(resolved, { config, timestamp: Date.now() });
+      
+      return config;
     } catch (error) {
       const issue: ValidationIssue = {
         path: "$file",
@@ -87,6 +115,11 @@ export class HelixValidator {
       )
       .join("\n");
     return [header, body].filter(Boolean).join("\n");
+  }
+
+  clearCache(): void {
+    this.cache.clear();
+    this.logger.debug("Cache cleared");
   }
 }
 

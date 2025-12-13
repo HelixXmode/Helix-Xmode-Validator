@@ -4,37 +4,76 @@ const levelOrder: Level[] = ["debug", "info", "warn", "error"];
 
 export interface LoggerOptions {
   level?: Level;
+  prefix?: string;
+  enableColors?: boolean;
 }
+
+const colors = {
+  debug: "\x1b[36m", // cyan
+  info: "\x1b[32m",  // green
+  warn: "\x1b[33m",  // yellow
+  error: "\x1b[31m", // red
+  reset: "\x1b[0m"
+};
 
 export class Logger {
   private level: Level;
+  private prefix: string;
+  private enableColors: boolean;
 
   constructor(options: LoggerOptions = {}) {
     this.level = options.level ?? "info";
+    this.prefix = options.prefix ?? "HelixValidator";
+    this.enableColors = options.enableColors ?? (typeof process !== "undefined" && process.stdout?.isTTY);
   }
 
-  debug(message: string) {
-    this.write("debug", message);
+  debug(message: string, ...args: unknown[]) {
+    this.write("debug", message, args);
   }
 
-  info(message: string) {
-    this.write("info", message);
+  info(message: string, ...args: unknown[]) {
+    this.write("info", message, args);
   }
 
-  warn(message: string) {
-    this.write("warn", message);
+  warn(message: string, ...args: unknown[]) {
+    this.write("warn", message, args);
   }
 
-  error(message: string) {
-    this.write("error", message);
+  error(message: string, ...args: unknown[]) {
+    this.write("error", message, args);
   }
 
-  private write(level: Level, message: string) {
+  setLevel(level: Level): void {
+    this.level = level;
+  }
+
+  private write(level: Level, message: string, args: unknown[] = []) {
     if (levelOrder.indexOf(level) < levelOrder.indexOf(this.level)) return;
+    
     const ts = new Date().toISOString();
-    // Minimal formatting to look production-ready.
-    // eslint-disable-next-line no-console
-    console.log(`[${ts}] [${level.toUpperCase()}] ${message}`);
+    const levelStr = level.toUpperCase().padEnd(5);
+    const prefixStr = this.prefix ? `[${this.prefix}]` : "";
+    
+    let formattedMessage = message;
+    if (args.length > 0) {
+      try {
+        formattedMessage = `${message} ${args.map(arg => 
+          typeof arg === "object" ? JSON.stringify(arg) : String(arg)
+        ).join(" ")}`;
+      } catch {
+        formattedMessage = `${message} ${args.join(" ")}`;
+      }
+    }
+
+    const logLine = `[${ts}] ${prefixStr} [${levelStr}] ${formattedMessage}`;
+    
+    if (this.enableColors && colors[level]) {
+      // eslint-disable-next-line no-console
+      console.log(`${colors[level]}${logLine}${colors.reset}`);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(logLine);
+    }
   }
 }
 
