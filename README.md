@@ -196,15 +196,33 @@ helix-x-validator/
 
 ## Validation Flow
 
-The validation process follows these steps:
+The validation process for Solana validator configurations follows these steps:
 
-1. **Load**: Configuration file is loaded using the appropriate loader (JSON or YAML)
-2. **Parse**: File content is parsed and validated for syntax errors
-3. **Schema Validation**: Structural validation checks required fields and types
-4. **Rule Validation**: Semantic rules are applied (naming conventions, duplicates, etc.)
-5. **Plugin Execution**: Custom plugins run additional validations
-6. **Format Output**: Results are formatted as text or JSON
-7. **Exit**: Process exits with appropriate code (0 for success, 1 for failure)
+1. **Load**: Validator configuration file is loaded using the appropriate loader (JSON or YAML)
+2. **Parse**: File content is parsed and validated for syntax errors and encoding issues
+3. **Schema Validation**: Structural validation checks required fields:
+   - Validator identity (vote account, identity keypair)
+   - Network configuration (RPC endpoints, cluster settings)
+   - Staking parameters (commission rate, minimum stake)
+   - Performance settings (block production, vote submission)
+4. **Account Validation**: Solana-specific checks:
+   - Account addresses format (base58 encoding)
+   - Account ownership verification
+   - Lamports balance requirements
+   - Account data structure validation
+5. **Transaction Validation**: Instruction and transaction checks:
+   - Instruction program IDs verification
+   - Account key validation and signer requirements
+   - Transaction size limits and compute budget
+   - Signature verification requirements
+6. **Network Rules**: Solana network-specific validations:
+   - Cluster compatibility (mainnet-beta, testnet, devnet)
+   - Epoch and slot alignment checks
+   - Vote account activation status
+   - Stake delegation rules
+7. **Plugin Execution**: Custom plugins run additional Solana-specific validations
+8. **Format Output**: Results are formatted as text or JSON with Solana-specific error codes
+9. **Exit**: Process exits with appropriate code (0 for success, 1 for failure)
 
 ## Advanced Examples
 
