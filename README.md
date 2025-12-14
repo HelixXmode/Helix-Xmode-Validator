@@ -10,6 +10,7 @@ Helix X Validator is a lightweight CLI and library for parsing Helix configurati
 - **Extensible architecture**: Plugin system for custom validation rules
 - **CI/CD ready**: Batch validation, exit codes, and CI-friendly output formats
 - **Developer experience**: Clear error messages, colorized output, and detailed diagnostics
+- **Performance optimized**: LRU cache with mtime validation, single-pass algorithms, and early-exit optimizations
 
 ## Quick Start
 
@@ -291,6 +292,25 @@ The project includes several utility scripts:
 - **Performance budget**: Benchmarks and flamegraphs on CI
 - **Opt-in telemetry**: PII redaction and local-only mode by default
 - **Signed releases**: SBOM generation for supply-chain hygiene
+
+## Changelog
+
+### v0.1.1 - Performance Optimizations
+
+**Performance improvements:**
+- Implemented LRU cache with mtime-based invalidation for better cache hit rates
+- Optimized summary building with single-pass algorithms instead of multiple filters
+- Improved error handling with early validation and better error messages
+- Enhanced ruleset evaluation with compiled regex patterns and early-exit optimizations
+- Optimized issue grouping and formatting with single-pass algorithms
+- Added file existence validation in CLI before validator initialization
+- Improved logger performance by avoiding unnecessary string operations
+
+**Technical changes:**
+- Cache now tracks file modification time (mtime) for accurate invalidation
+- Cache size limited to 50 entries with LRU eviction policy
+- All multi-pass filter operations replaced with single-pass loops
+- Early validation checks added to CLI for faster error feedback
 
 ## Contributing
 

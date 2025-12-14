@@ -70,17 +70,20 @@ export class ErrorHandler {
 
   /**
    * Group issues by path for better organization.
+   * Optimized: single pass with direct Map operations.
    */
   groupByPath(issues: ValidationIssue[]): Map<string, ValidationIssue[]> {
     const grouped = new Map<string, ValidationIssue[]>();
 
-    issues.forEach(issue => {
+    for (const issue of issues) {
       const path = issue.path;
-      if (!grouped.has(path)) {
-        grouped.set(path, []);
+      const existing = grouped.get(path);
+      if (existing) {
+        existing.push(issue);
+      } else {
+        grouped.set(path, [issue]);
       }
-      grouped.get(path)!.push(issue);
-    });
+    }
 
     return grouped;
   }

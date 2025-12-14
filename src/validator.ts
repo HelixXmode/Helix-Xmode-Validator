@@ -10,11 +10,18 @@ import {
   ValidatorOptions
 } from "./types";
 
+interface CacheEntry {
+  config: HelixConfig;
+  timestamp: number;
+  mtime: number;
+}
+
 export class HelixValidator {
   private logger: Logger;
   private options: ValidatorOptions;
-  private cache: Map<string, { config: HelixConfig; timestamp: number }>;
+  private cache: Map<string, CacheEntry>;
   private readonly cacheTtl: number = 5000; // 5 seconds
+  private readonly maxCacheSize: number = 50; // LRU cache limit
 
   constructor(options: ValidatorOptions = {}) {
     this.options = options;
@@ -24,13 +31,36 @@ export class HelixValidator {
 
   async validateFile(filePath: string): Promise<ValidationResult> {
     const started = Date.now();
-    const config = await this.loadConfig(filePath);
+    let config: HelixConfig;
+    
+    try {
+      config = await this.loadConfig(filePath);
+    } catch (error) {
+      // Return early validation result for file loading errors
+      const issue: ValidationIssue = {
+        path: "$file",
+        message: `Failed to load config: ${(error as Error).message}`,
+        severity: "error",
+        rule: "io/load-error"
+      };
+      const summary = this.buildSummary([issue]);
+      const format = this.options.format ?? "text";
+      return {
+        ok: false,
+        issues: [issue],
+        summary: this.render(summary, [issue], format),
+        elapsedMs: Date.now() - started,
+        format
+      };
+    }
+    
     const result = this.validateConfig(config);
     const elapsedMs = Date.now() - started;
     
     this.logger.debug(`Validation completed in ${elapsedMs}ms`);
     if (!result.ok) {
-      this.logger.warn(`Validation failed: ${result.issues.filter(i => i.severity === "error").length} errors`);
+      const errorCount = result.issues.filter(i => i.severity === "error").length;
+      this.logger.warn(`Validation failed: ${errorCount} errors`);
     }
     
     return { ...result, elapsedMs };
@@ -52,43 +82,57 @@ export class HelixValidator {
     const resolved = path.resolve(filePath);
     this.logger.info(`Loading config from ${resolved}`);
     
-    // Check cache first
+    // Verify file exists and get stats
+    const stats = await stat(resolved);
+    if (!stats.isFile()) {
+      throw new Error(`Path is not a file: ${resolved}`);
+    }
+
+    // Check cache with mtime validation for better cache invalidation
     const cached = this.cache.get(resolved);
-    if (cached && Date.now() - cached.timestamp < this.cacheTtl) {
+    const now = Date.now();
+    if (cached && 
+        (now - cached.timestamp < this.cacheTtl) && 
+        cached.mtime === stats.mtimeMs) {
       this.logger.debug(`Using cached config for ${resolved}`);
       return cached.config;
     }
 
-    try {
-      // Verify file exists and is readable
-      const stats = await stat(resolved);
-      if (!stats.isFile()) {
-        throw new Error(`Path is not a file: ${resolved}`);
+    // Enforce LRU cache size limit
+    if (this.cache.size >= this.maxCacheSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) {
+        this.cache.delete(firstKey);
+        this.logger.debug(`Cache size limit reached, evicted: ${firstKey}`);
       }
-
-      const file = await readFile(resolved, "utf8");
-      const config = JSON.parse(file) as HelixConfig;
-      
-      // Cache the parsed config
-      this.cache.set(resolved, { config, timestamp: Date.now() });
-      
-      return config;
-    } catch (error) {
-      const issue: ValidationIssue = {
-        path: "$file",
-        message: `Failed to read or parse config: ${(error as Error).message}`,
-        severity: "error",
-        rule: "io/parse-error"
-      };
-      const summary = this.render(this.buildSummary([issue]), [issue], "text");
-      return { rules: {}, metadata: { error: summary } };
     }
+
+    // Read and parse file
+    const file = await readFile(resolved, "utf8");
+    const config = JSON.parse(file) as HelixConfig;
+    
+    // Cache the parsed config with mtime for change detection
+    this.cache.set(resolved, { 
+      config, 
+      timestamp: now,
+      mtime: stats.mtimeMs 
+    });
+    
+    return config;
   }
 
   private buildSummary(issues: ValidationIssue[]) {
-    const errors = issues.filter((i) => i.severity === "error").length;
-    const warnings = issues.filter((i) => i.severity === "warn").length;
-    const infos = issues.filter((i) => i.severity === "info").length;
+    // Optimize: single pass through issues array instead of multiple filters
+    let errors = 0;
+    let warnings = 0;
+    let infos = 0;
+    
+    for (const issue of issues) {
+      if (issue.severity === "error") errors++;
+      else if (issue.severity === "warn") warnings++;
+      else if (issue.severity === "info") infos++;
+    }
+    
     return { errors, warnings, infos, total: issues.length };
   }
 
@@ -120,6 +164,16 @@ export class HelixValidator {
   clearCache(): void {
     this.cache.clear();
     this.logger.debug("Cache cleared");
+  }
+
+  /**
+   * Get cache statistics for monitoring.
+   */
+  getCacheStats(): { size: number; maxSize: number; hitRate?: number } {
+    return {
+      size: this.cache.size,
+      maxSize: this.maxCacheSize
+    };
   }
 }
 

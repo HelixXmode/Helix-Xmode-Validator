@@ -8,7 +8,7 @@ const maxVersionLength = 32;
 export function validateSchema(config: HelixConfig): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
 
-  // Name validation
+  // Name validation - optimized with early returns for common cases
   if (!config.name) {
     issues.push({
       path: "name",
@@ -16,31 +16,31 @@ export function validateSchema(config: HelixConfig): ValidationIssue[] {
       severity: "error",
       rule: "schema/name-required"
     });
+    // Early return optimization: if name is missing, skip further name checks
+  } else if (typeof config.name !== "string") {
+    issues.push({
+      path: "name",
+      message: "Config name must be a string.",
+      severity: "error",
+      rule: "schema/name-type"
+    });
   } else {
-    if (typeof config.name !== "string") {
+    // Optimize: combine length and format checks
+    if (config.name.length > maxNameLength) {
       issues.push({
         path: "name",
-        message: "Config name must be a string.",
+        message: `Config name exceeds maximum length of ${maxNameLength} characters.`,
         severity: "error",
-        rule: "schema/name-type"
+        rule: "schema/name-length"
       });
-    } else {
-      if (config.name.length > maxNameLength) {
-        issues.push({
-          path: "name",
-          message: `Config name exceeds maximum length of ${maxNameLength} characters.`,
-          severity: "error",
-          rule: "schema/name-length"
-        });
-      }
-      if (!nameRegex.test(config.name)) {
-        issues.push({
-          path: "name",
-          message: "Config name must contain only alphanumeric characters and hyphens, and cannot start or end with a hyphen.",
-          severity: "error",
-          rule: "schema/name-format"
-        });
-      }
+    }
+    if (!nameRegex.test(config.name)) {
+      issues.push({
+        path: "name",
+        message: "Config name must contain only alphanumeric characters and hyphens, and cannot start or end with a hyphen.",
+        severity: "error",
+        rule: "schema/name-format"
+      });
     }
   }
 

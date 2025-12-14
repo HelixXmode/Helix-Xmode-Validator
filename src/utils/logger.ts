@@ -48,18 +48,22 @@ export class Logger {
   }
 
   private write(level: Level, message: string, args: unknown[] = []) {
+    // Early exit optimization: check log level before any processing
     if (levelOrder.indexOf(level) < levelOrder.indexOf(this.level)) return;
     
     const ts = new Date().toISOString();
     const levelStr = level.toUpperCase().padEnd(5);
     const prefixStr = this.prefix ? `[${this.prefix}]` : "";
     
+    // Optimize: avoid string operations if no args
     let formattedMessage = message;
     if (args.length > 0) {
       try {
-        formattedMessage = `${message} ${args.map(arg => 
+        // Optimize: use array join instead of repeated concatenation
+        const argStrings = args.map(arg => 
           typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-        ).join(" ")}`;
+        );
+        formattedMessage = `${message} ${argStrings.join(" ")}`;
       } catch {
         formattedMessage = `${message} ${args.join(" ")}`;
       }
@@ -67,6 +71,7 @@ export class Logger {
 
     const logLine = `[${ts}] ${prefixStr} [${levelStr}] ${formattedMessage}`;
     
+    // Optimize: single console.log call
     if (this.enableColors && colors[level]) {
       // eslint-disable-next-line no-console
       console.log(`${colors[level]}${logLine}${colors.reset}`);

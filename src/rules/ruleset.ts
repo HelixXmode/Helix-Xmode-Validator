@@ -51,8 +51,9 @@ export function evaluateRules(
     });
   });
 
-  // Rule key format validation
-  ruleKeys.forEach((key) => {
+  // Rule key format validation - optimized with compiled regex
+  const keyFormatRegex = /^[a-zA-Z0-9_][a-zA-Z0-9_\-.]*$/;
+  for (const key of ruleKeys) {
     if (key.length > MAX_RULE_KEY_LENGTH) {
       issues.push({
         path: `rules.${key}`,
@@ -62,7 +63,7 @@ export function evaluateRules(
       });
     }
 
-    if (!/^[a-zA-Z0-9_][a-zA-Z0-9_\-.]*$/.test(key)) {
+    if (!keyFormatRegex.test(key)) {
       issues.push({
         path: `rules.${key}`,
         message: `Rule key "${key}" contains invalid characters. Only alphanumeric, underscore, hyphen, and dot are allowed.`,
@@ -71,17 +72,20 @@ export function evaluateRules(
       });
     }
 
-    // Deprecation warnings
+    // Deprecation warnings - optimized with early exit
     const lowerKey = key.toLowerCase();
-    if (DEPRECATED_PATTERNS.some(pattern => lowerKey.includes(pattern))) {
-      issues.push({
-        path: `rules.${key}`,
-        message: `Rule key "${key}" appears to use deprecated naming pattern. Consider updating to current conventions.`,
-        severity: "info",
-        rule: "ruleset/deprecated-pattern"
-      });
+    for (const pattern of DEPRECATED_PATTERNS) {
+      if (lowerKey.includes(pattern)) {
+        issues.push({
+          path: `rules.${key}`,
+          message: `Rule key "${key}" appears to use deprecated naming pattern. Consider updating to current conventions.`,
+          severity: "info",
+          rule: "ruleset/deprecated-pattern"
+        });
+        break; // Early exit after first match
+      }
     }
-  });
+  }
 
   // Strict ruleset validation
   if (options.name === "strict") {
@@ -112,17 +116,18 @@ export function evaluateRules(
 }
 
 function findDuplicates(values: string[]): string[] {
-  const seen = new Map<string, string>(); // original -> normalized
+  // Optimize: use single pass with early detection
+  const seen = new Map<string, string>(); // normalized -> original
   const dup = new Set<string>();
   
-  values.forEach((value) => {
+  for (const value of values) {
     const normalized = value.toLowerCase();
     if (seen.has(normalized)) {
       dup.add(normalized);
     } else {
       seen.set(normalized, value);
     }
-  });
+  }
   
   return Array.from(dup);
 }

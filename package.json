@@ -1,6 +1,6 @@
 {
   "name": "helix-x-validator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lightweight CLI and library for parsing Helix configuration files, validating rule sets and schemas, and producing clear error reports before deployments.",
   "type": "module",
   "main": "dist/index.js",

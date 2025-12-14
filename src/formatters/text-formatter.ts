@@ -72,11 +72,18 @@ export class TextFormatter {
 
   /**
    * Format summary statistics.
+   * Optimized: single pass through issues instead of multiple filters.
    */
   private formatSummary(result: ValidationResult): string {
-    const errors = result.issues.filter((i) => i.severity === "error").length;
-    const warnings = result.issues.filter((i) => i.severity === "warn").length;
-    const infos = result.issues.filter((i) => i.severity === "info").length;
+    let errors = 0;
+    let warnings = 0;
+    let infos = 0;
+
+    for (const issue of result.issues) {
+      if (issue.severity === "error") errors++;
+      else if (issue.severity === "warn") warnings++;
+      else if (issue.severity === "info") infos++;
+    }
 
     const parts: string[] = [];
     if (errors > 0) {
@@ -98,12 +105,19 @@ export class TextFormatter {
 
   /**
    * Format issues list.
+   * Optimized: single pass grouping instead of multiple filters.
    */
   private formatIssues(issues: ValidationIssue[]): string {
-    // Group by severity
-    const errors = issues.filter((i) => i.severity === "error");
-    const warnings = issues.filter((i) => i.severity === "warn");
-    const infos = issues.filter((i) => i.severity === "info");
+    // Group by severity in single pass
+    const errors: ValidationIssue[] = [];
+    const warnings: ValidationIssue[] = [];
+    const infos: ValidationIssue[] = [];
+
+    for (const issue of issues) {
+      if (issue.severity === "error") errors.push(issue);
+      else if (issue.severity === "warn") warnings.push(issue);
+      else if (issue.severity === "info") infos.push(issue);
+    }
 
     const sections: string[] = [];
 
